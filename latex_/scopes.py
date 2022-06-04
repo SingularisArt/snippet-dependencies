@@ -13,32 +13,35 @@ def pure_math():
 
 # Inline Math Mode
 def inline_math():
-    return vim.eval("vimtex#syntax#in('texMathZoneX$')") == '1'
+    return vim.eval("vimtex#syntax#in('texMathZoneX')") == '1'
 
 
 # Display Math Mode
 def display_math():
-    return vim.eval("vimtex#syntax#in('texMathZoneXX')") == '1'
+    return vim.eval("vimtex#syntax#in('texMathZoneX')") == '0' and \
+        math()
 
 
 # Chemistry Mode
 def chem():
-    return vim.eval("get(vimtex#cmd#get_current(), 'name')") == '\\ce' and math()
+    return vim.eval("get(vimtex#cmd#get_current(), 'name')") == '\\ce' \
+        and math()
 
 
 # Not Chemistry Mode
 def not_chem():
-    return vim.eval("get(vimtex#cmd#get_current(), 'name')") != '\\ce'
+    return not chem()
 
 
 # Unit Mode
 def unit():
-    return vim.eval("get(vimtex#cmd#get_current(), 'name')") == '\\pu' and math()
+    return vim.eval("get(vimtex#cmd#get_current(), 'name')") == '\\pu' \
+        and math()
 
 
 # Not Unit Mode
 def not_unit():
-    return vim.eval("get(vimtex#cmd#get_current(), 'name')") != '\\pu'
+    return not unit()
 
 
 # Text Mode
