@@ -2,7 +2,10 @@
 
 """Helper methods used in UltiSnips snippets."""
 
-import string, vim, re
+import string
+import vim
+import re
+
 
 def complete(tab, opts):
     """
@@ -14,17 +17,19 @@ def complete(tab, opts):
     :return: a string that match with tab
     """
     el = [x for x in tab]
-    pat = "".join(list(map(lambda x: x + "\w*" if re.match("\w", x) else x,
+    pat = "".join(list(map(lambda x: x + r"\w*" if re.match(r"\w", x) else x,
                            el)))
     try:
         opts = [x for x in opts if re.search(pat, x, re.IGNORECASE)]
-    except:
+    except Exception:
         opts = [x for x in opts if x.startswith(tab)]
     if not len(opts) or str.lower(tab) in list(map(str.lower, opts)):
         return ""
     cads = "|".join(opts[:5])
-    if len(opts) > 5: cads += "|..."
+    if len(opts) > 5:
+        cads += "|..."
     return "({0})".format(cads)
+
 
 def _parse_comments(s):
     """ Parses vim's comments option to extract comment format """
@@ -63,6 +68,7 @@ def _parse_comments(s):
     except StopIteration:
         return rv
 
+
 def get_comment_format():
     """ Returns a 4-element tuple (first_line, middle_lines, end_line, indent)
     representing the comment format for the current file.
@@ -85,13 +91,15 @@ def get_comment_format():
 def make_box(twidth, bwidth=None):
     b, m, e, i = (s.strip() for s in get_comment_format())
     m0 = m[0] if m else ''
-    bwidth_inner = bwidth - 3 - max(len(b), len(i + e)) if bwidth else twidth + 2
+    bwidth_inner = bwidth - 3 - \
+        max(len(b), len(i + e)) if bwidth else twidth + 2
     sline = b + m + bwidth_inner * m0 + 2 * m0
     nspaces = (bwidth_inner - twidth) // 2
     mlines = i + m + " " + " " * nspaces
     mlinee = " " + " "*(bwidth_inner - twidth - nspaces) + m
     eline = i + m + bwidth_inner * m0 + 2 * m0 + e
     return sline, mlines, mlinee, eline
+
 
 def foldmarker():
     "Return a tuple of (open fold marker, close fold marker)"
@@ -112,11 +120,14 @@ def display_width(str):
         return result
 
 # http://stackoverflow.com/questions/2718196/find-all-chinese-text-in-a-string-using-python-and-regex
+
+
 def has_cjk(s):
     """Detect if s contains CJK characters."""
     cjk_re = re.compile(u'[⺀-⺙⺛-⻳⼀-⿕々〇〡-〩〸-〺〻㐀-䶵一-鿃豈-鶴侮-頻並-龎]', re.UNICODE)
 
     return cjk_re.search(s) is not None
 
-def choose_next(string, array, length = 0):
+
+def choose_next(string, array, length=0):
     return array[array.index(string) - (length or len(array)) + 1]
