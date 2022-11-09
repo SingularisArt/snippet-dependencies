@@ -1,2 +1,0 @@
-def environments():
-    return "Hi"
