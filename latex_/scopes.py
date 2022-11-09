@@ -13,7 +13,7 @@ def pure_math():
 
 # Inline Math Mode
 def inline_math():
-    return vim.eval("vimtex#syntax#in('texMathZoneX')") == '1'
+    return vim.eval("vimtex#syntax#in('texMathZoneTI')") == '1'
 
 
 # Display Math Mode
