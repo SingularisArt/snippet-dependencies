@@ -1,42 +1,140 @@
 from builtin import choose_next
 
-command_mapping = ['🚀', '🚁', '🚂', '🚃', '🚄', '🚅', '🚆', '🚇', '🚈', '🚉', '🚊', '🚋', '🚌', '🚍', '🚎', '🚏']
+command_mapping = [
+    "🚀",
+    "🚁",
+    "🚂",
+    "🚃",
+    "🚄",
+    "🚅",
+    "🚆",
+    "🚇",
+    "🚈",
+    "🚉",
+    "🚊",
+    "🚋",
+    "🚌",
+    "🚍",
+    "🚎",
+    "🚏",
+]
 
 
-def command_cycle(target, commands, bracketnum = 1):
-    length = len(commands)
-    command_map = command_mapping[:length]
-    for i in range(length):
-        target = target.replace(commands[i], command_map[i])
+def replace_commands(target, commands, replacements):
+    for i in range(len(commands)):
+        target = target.replace(commands[i], replacements[i])
+    return target
+
+
+def find_and_replace(target, bracketnum, replace_func):
     string = list(target)
     depth = braces = 0
     for i in range(len(string) - 1, -1, -1):
-        if string[i] == '}': depth += 1
-        elif string[i] == '{': depth -= 1
+        if string[i] == "}":
+            depth += 1
+        elif string[i] == "{":
+            depth -= 1
         elif braces == bracketnum:
             if not depth:
                 try:
-                    string[i] = choose_next(string[i], command_map, length)
+                    string[i] = replace_func(string[i])
                     break
-                except:
+                except ValueError:
                     pass
         braces += 0 if depth else 1
-    result = ''.join(string)
-    for i in range(length):
-        result = result.replace(command_map[i], commands[i])
-    return result
+    return "".join(string)
 
 
-def command_swap(target, command_1, command_2, bracketnum = 1):
-    string = list(target.replace(command_1, '🚀').replace(command_2, '🚁'))
-    depth = braces = 0
-    for i in range(len(string) - 1, -1, -1):
-        if string[i] == '}': depth += 1
-        elif string[i] == '{': depth -= 1
-        elif braces == bracketnum:
-            if not depth:
-                if string[i] == '🚀': string[i] = '🚁'
-                elif string[i] == '🚁': string[i] = '🚀'
-            break
-        braces += 0 if depth else 1
-    return ''.join(string).replace('🚀', command_1).replace('🚁', command_2)
+def command_cycle(target, commands, bracketnum=1):
+    command_map = command_mapping[: len(commands)]
+    target = replace_commands(target, commands, command_map)
+    target = find_and_replace(
+        target,
+        bracketnum,
+        lambda x: x,
+    )
+    target = replace_commands(target, command_map, commands)
+    return target
+
+
+def command_swap(target, command_1, command_2, bracketnum=1):
+    target = target.replace(command_1, "🚀").replace(command_2, "🚁")
+    target = find_and_replace(target, bracketnum, lambda x: x)
+    return target.replace("🚀", command_1).replace("🚁", command_2)
+
+
+def create_table(snip, match):
+    s = snip.buffer[snip.line]
+    rows, cols = int(match.group(2)), int(match.group(3))
+    offset = cols + 1
+    old_spacing = s[: s.rfind("\t") + 1]
+    snip.buffer[snip.line] = ""
+    text_type = match.group(1)
+
+    column_format_parts = []
+    for i in range(cols):
+        if text_type:
+            column_format_parts.append(f"${i + 1}:{text_type}")
+        else:
+            column_format_parts.append(f"${i + 1}")
+
+    column_format = "|" + "|".join(column_format_parts) + "|"
+    final_str = f"{old_spacing}\\begin{{tabular}}{{{column_format}}}\n"
+
+    for i in range(rows):
+        final_str += f"{old_spacing}\t"
+        row_values = ["$" + str(i * cols + j + offset) for j in range(cols)]
+        final_str += " & ".join(row_values) + " \\\\\\\n"
+
+    final_str += f"{old_spacing}\\end{{tabular}}$0"
+    snip.expand_anon(final_str)
+
+
+def add_row(snip, match):
+    s = snip.buffer[snip.line]
+
+    rowLen = int(match.group(1))
+    oldSpacing = s[: s.rfind("\t") + 1]
+    snip.buffer[snip.line] = ""
+
+    finalStr = oldSpacing
+    finalStr += " & ".join(["$" + str(j + 1) for j in range(rowLen)])
+    finalStr += " \\\\\\"
+    snip.expand_anon(finalStr)
+
+
+def create_matrix(snip, match):
+    s = snip.buffer[snip.line]
+
+    content = s[s.find("(") + 1 : s.find(")")]
+    rows, cols = map(int, content.split(" "))
+    specialEnv = match.group(1)
+    env = "matrix"
+    if specialEnv:
+        env = str(specialEnv) + env
+    offset = cols + 1
+    oldSpacing = s[: s.rfind("\t") + 1]
+    snip.buffer[snip.line] = ""
+
+    finalStr = oldSpacing + "\\begin{" + env + "}\n"
+
+    for i in range(rows):
+        finalStr += oldSpacing + "\t"
+        rowValues = []
+        for j in range(cols):
+            rowValues.append("$" + str(i * cols + j + offset))
+
+        finalStr += " & ".join(rowValues)
+        finalStr += " \\\\\\\n"
+
+    finalStr += oldSpacing + "\\end{" + env + "}$0"
+    snip.expand_anon(finalStr)
+
+
+def complete(t, opts):
+    if t:
+        opts = [m[len(t) :] for m in opts if m.startswith(t)]
+    if len(opts) == 1:
+        return opts[0]
+
+    return "(" + "|".join(opts) + ")"
