@@ -1,5 +1,3 @@
-from builtin import choose_next
-
 command_mapping = [
     "🚀",
     "🚁",
@@ -104,22 +102,45 @@ def add_row(snip, match):
 
 
 def create_matrix(snip, match):
-    s = snip.buffer[snip.line]
+    rows, cols = int(match.group(3)), int(match.group(4))
+    specialEnv = match.group(2)
+    augmented = match.group(1)
 
-    content = s[s.find("(") + 1 : s.find(")")]
-    rows, cols = map(int, content.split(" "))
-    specialEnv = match.group(1)
     env = "matrix"
+    offset = cols + 1
+
     if specialEnv:
         env = str(specialEnv) + env
+
     offset = cols + 1
-    oldSpacing = s[: s.rfind("\t") + 1]
     snip.buffer[snip.line] = ""
 
-    finalStr = oldSpacing + "\\begin{" + env + "}\n"
+    openBrace, closeBrace = "", ""
+    if specialEnv == "b" and augmented:
+        openBrace, closeBrace = "\\left[", "\\right]"
+    elif specialEnv == "B" and augmented:
+        openBrace, closeBrace = "\\left\\{", "\\right\\}"
+    elif specialEnv == "p" and augmented:
+        openBrace, closeBrace = "\\left(", "\\right)"
+    elif specialEnv == "v" and augmented:
+        openBrace, closeBrace = "\\left|", "\\right|"
+    elif specialEnv == "V" and augmented:
+        openBrace, closeBrace = "\\left\\|", "\\right\\|"
+    elif specialEnv == "d":
+        openBrace, closeBrace = "\\left$1", "\\right$0"
+
+    colLetter = "c" * (cols - 1)
+    finalStr = openBrace
+
+    if augmented:
+        finalStr += "\\begin{array}{" + colLetter + "|c}\n"
+    elif specialEnv == "d":
+        finalStr += "\\begin{matrix}\n"
+    else:
+        finalStr += "\\begin{" + env + "}\n"
 
     for i in range(rows):
-        finalStr += oldSpacing + "\t"
+        finalStr += "\t"
         rowValues = []
         for j in range(cols):
             rowValues.append("$" + str(i * cols + j + offset))
@@ -127,13 +148,21 @@ def create_matrix(snip, match):
         finalStr += " & ".join(rowValues)
         finalStr += " \\\\\\\n"
 
-    finalStr += oldSpacing + "\\end{" + env + "}$0"
+    if augmented:
+        finalStr += "\\end{array}"
+    elif specialEnv == "d":
+        finalStr += "\\end{matrix}"
+    else:
+        finalStr += "\\end{" + env + "}"
+
+    finalStr += closeBrace
+
     snip.expand_anon(finalStr)
 
 
 def complete(t, opts):
     if t:
-        opts = [m[len(t) :] for m in opts if m.startswith(t)]
+        opts = [m[len(t):] for m in opts if m.startswith(t)]
     if len(opts) == 1:
         return opts[0]
 
