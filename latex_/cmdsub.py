@@ -1,3 +1,6 @@
+from sympy import latex
+from .variables import special_bar_hat_vec, map_bar_hat_vec, units
+
 command_mapping = [
     "🚀",
     "🚁",
@@ -167,3 +170,78 @@ def complete(t, opts):
         return opts[0]
 
     return "(" + "|".join(opts) + ")"
+
+
+def have_block(form, snip):
+    status = 0
+    for line in snip.buffer[: snip.line + 1]:
+        if line == form:
+            status = not status
+    return not status
+
+
+def get_block(form, snip):
+    status = 0
+    start = 0
+
+    for index, line in enumerate(snip.buffer[: snip.line + 1]):
+        if line == form:
+            status = not status
+            if status:
+                start = index
+
+    result = "\n".join(snip.buffer[start + 1: snip.line])
+    snip.buffer[start: snip.line + 1] = [""]
+    return result
+
+
+def calculate_sympy(snip):
+    block = get_block("SYMPY", snip)
+    pre_define = """
+from sympy import *
+x, y, z, t = symbols('x y z t')
+k, m, n = symbols('k m n', integer = True)
+f, g, h = symbols('f g h', cls = Function)
+"""
+    sympy_result = {}
+    exec(
+        pre_define
+        + block.replace("\\", "")
+        .replace("^", "**")
+        .replace("{", "(")
+        .replace("}", ")"),
+        sympy_result,
+    )
+    result = latex(sympy_result["rv"] or "")
+    snip.expand_anon(result)
+
+
+def bar_hat_vec(target, word, subscript=""):
+    return (
+        "\\"
+        + target
+        + "{"
+        + ("\\" + word + "math" if word in special_bar_hat_vec else word)
+        + "}"
+        + (subscript or "")
+    )
+
+
+def long_bar_hat_vec(target, word, subscript=""):
+    return map_bar_hat_vec[target] + "{" + word + "}" + (subscript or "")
+
+
+def expand_unit(string):
+    new_string = []
+
+    string_split = string.replace("  ", r" per ").split()
+
+    for str in string_split:
+        if str not in units:
+            new_string.append(f"\\{str}")
+        else:
+            for unit in units:
+                if str == unit:
+                    new_string.append(units[unit])
+
+    return "".join(new_string)
