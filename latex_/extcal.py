@@ -21,7 +21,8 @@ def pre_process_text(text):
 def pre_process_latex(text):
     return (
         text.replace(r"\e", r" e")
-        .replace(r"\d ", r"\, d")
+        .replace(r"\d ", r"\,d")
+        .replace("\\textrm{d}", r"\,d")
         .replace(
             "\\",
             "\\\\",
@@ -47,7 +48,7 @@ def get_block(form, snip):
             return (start, "\n".join(snip.buffer[start + 1: snip.line]))
 
 
-def calculate_sympy(snip, from_latex=False):
+def calculate_sympy(snip):
     index, block = get_block("sympy", snip)
     snip.buffer[index: snip.line + 1] = [""]
     pre_define = """
@@ -63,7 +64,11 @@ f, g, h = symbols("f g h", cls = Function)
     snip.buffer[index] = result
 
 
-def calculate_wolfram(snip, from_latex=False, timeout=wolframscript_timeout_default):
+def calculate_wolfram(
+    snip,
+    from_latex=False,
+    timeout=wolframscript_timeout_default,
+):
     index, block = get_block("\\wolfram" if from_latex else "wolfram", snip)
     snip.buffer[index: snip.line + 1] = [""]
 
@@ -75,6 +80,7 @@ def calculate_wolfram(snip, from_latex=False, timeout=wolframscript_timeout_defa
         )
     else:
         code = "ToString[" + block.replace("\n", ";") + ", TeXForm]"
+
     try:
         result = check_output(
             ["wolframscript", "-code", code],
