@@ -105,7 +105,7 @@ def add_row(snip, match):
 
 
 def create_matrix(snip, match):
-    rows, cols = int(match.group(3)), int(match.group(4))
+    cols, rows = int(match.group(3)), int(match.group(4))
     specialEnv = match.group(2)
     augmented = match.group(1)
 
