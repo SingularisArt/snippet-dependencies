@@ -8,7 +8,7 @@ def math():
 
 # Pure Math Mode
 def pureMath():
-    return math() and not_chem() and not_unit()
+    return math() and notChem() and notUnit()
 
 
 # Inline Math Mode
