@@ -1,10 +1,10 @@
-from latex_.scopes import display_math
+import re
+
+from latex_.scopes import displayMath
 from sympy import latex
 
-wolframscript_timeout_default = 10
 
-
-def pre_process_text(text):
+def preProcessText(text):
     return (
         text.replace("\\", "")
         .replace("^", "**")
@@ -16,7 +16,7 @@ def pre_process_text(text):
     )
 
 
-def pre_process_latex(text):
+def preProcessLatex(text):
     return (
         text
         # .replace(r"\e", r" e")
@@ -28,16 +28,16 @@ def pre_process_latex(text):
     )
 
 
-def process_latex(text):
+def processLatex(text):
     return text.replace(
         r"\, d",
         r"\textrm{d}",
     )
 
 
-def get_block(form, snip):
+def getBlock(form, snip):
     start = 0
-    if display_math():
+    if displayMath():
         status = 0
         for index, line in enumerate(snip.buffer[: snip.line]):
             if line == form:
@@ -51,11 +51,28 @@ def get_block(form, snip):
     return ("", "")
 
 
-def calculate_sympy(snip):
-    index, block = get_block("Sympy", snip)
+def expandBrackets(string):
+    lBrackets = ["(", "[", r"\{"]
+    rBrackets = [")", "]", r"\}"]
+
+    for bracket in lBrackets:
+        pattern = r"(?<!\\left)" + re.escape(bracket)
+        replaceString = r"\\left" + bracket
+        string = re.sub(pattern, replaceString, string)
+
+    for bracket in rBrackets:
+        pattern = r"(?<!\\right)" + re.escape(bracket)
+        replaceString = r"\\right" + bracket
+        string = re.sub(pattern, replaceString, string)
+
+    return string
+
+
+def calculateSympy(snip):
+    index, block = getBlock("Sympy", snip)
     snip.buffer[index: snip.line + 1] = [""]
 
-    code = pre_process_text(block)
+    code = preProcessText(block)
 
     tex = f"""
 from sympy import *
@@ -67,11 +84,11 @@ f, g, h = symbols('f g h', cls = Function)
 
     result = ""
 
-    sympy_result = {}
-    exec(tex, sympy_result)
-    rv = sympy_result["rv"] or block
+    sympyResult = {}
+    exec(tex, sympyResult)
+    rv = sympyResult["rv"] or block
     lrv = latex(rv)
-    result = process_latex(lrv)
+    result = processLatex(lrv)
 
     snip.cursor.set(index, len(result))
     snip.buffer[index] = result

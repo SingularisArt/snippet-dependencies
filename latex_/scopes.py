@@ -7,17 +7,17 @@ def math():
 
 
 # Pure Math Mode
-def pure_math():
+def pureMath():
     return math() and not_chem() and not_unit()
 
 
 # Inline Math Mode
-def inline_math():
+def inlineMath():
     return vim.eval("vimtex#syntax#in('texMathZoneTI')") == "1"
 
 
 # Display Math Mode
-def display_math():
+def displayMath():
     return vim.eval("vimtex#syntax#in('texMathZoneX')") == "0" and math()
 
 
@@ -33,7 +33,7 @@ def chem():
 
 
 # Not Chemistry Mode
-def not_chem():
+def notChem():
     return not chem()
 
 
@@ -49,7 +49,7 @@ def unit():
 
 
 # Not Unit Mode
-def not_unit():
+def notUnit():
     return not unit()
 
 

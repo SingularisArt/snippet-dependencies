@@ -2,8 +2,8 @@
 #  Accents  #
 #############
 
-special_bar_hat_vec = ["i", "j"]
-map_bar_hat_vec = {
+specialBarHatVec = ["i", "j"]
+mapBarHatVec = {
     "bar": "\\overline",
     "hat": "\\widehat",
     "vec": "\\overrightarrow",
@@ -16,7 +16,7 @@ vecs = ["\\vec", "\\overrightarrow"]
 #  Logic  #
 ###########
 
-exists_terms_cycle = ["exists", "exists"]
+existsTermsCycle = ["exists", "exists"]
 ands = ["land", "bigwedge"]
 ors = ["lor", "bigvee"]
 
@@ -24,7 +24,7 @@ ors = ["lor", "bigvee"]
 #  Operators  #
 ###############
 
-plus_minus = ["\\pm", "\\mp"]
+plusMinus = ["\\pm", "\\mp"]
 
 #################
 #  Parenthesis  #
@@ -38,7 +38,7 @@ vert = ["\\vert", "\\Vert"]
 #  Pointers  #
 ##############
 
-left_arrows = [
+leftArrows = [
     "\\leftarrow",
     "\\gets",
     "\\longleftarrow",
@@ -46,7 +46,7 @@ left_arrows = [
     "\\Longleftarrow",
     "\\impliedby",
 ]
-right_arrows = [
+rightArrows = [
     "\\rightarrow",
     "\\to",
     "\\longrightarrow",
@@ -54,7 +54,7 @@ right_arrows = [
     "\\Longrightarrow",
     "\\implies",
 ]
-leftright_arrows = [
+leftrightArrows = [
     "\\longleftrightarrow",
     "\\Leftrightarrow",
     "\\Longleftrightarrow",

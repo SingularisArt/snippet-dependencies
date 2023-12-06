@@ -1,7 +1,6 @@
-from sympy import latex
-from .variables import special_bar_hat_vec, map_bar_hat_vec, units
+from .variables import specialBarHatVec, mapBarHatVec, units
 
-command_mapping = [
+commandMapping = [
     "🚀",
     "🚁",
     "🚂",
@@ -21,13 +20,13 @@ command_mapping = [
 ]
 
 
-def replace_commands(target, commands, replacements):
+def replaceCommands(target, commands, replacements):
     for i in range(len(commands)):
         target = target.replace(commands[i], replacements[i])
     return target
 
 
-def find_and_replace(target, bracketnum, replace_func):
+def findAndReplace(target, bracketnum, replace_func):
     string = list(target)
     depth = braces = 0
     for i in range(len(string) - 1, -1, -1):
@@ -46,25 +45,25 @@ def find_and_replace(target, bracketnum, replace_func):
     return "".join(string)
 
 
-def command_cycle(target, commands, bracketnum=1):
-    command_map = command_mapping[: len(commands)]
-    target = replace_commands(target, commands, command_map)
-    target = find_and_replace(
+def commandCycle(target, commands, bracketnum=1):
+    command_map = commandMapping[: len(commands)]
+    target = replaceCommands(target, commands, command_map)
+    target = findAndReplace(
         target,
         bracketnum,
         lambda x: x,
     )
-    target = replace_commands(target, command_map, commands)
+    target = replaceCommands(target, command_map, commands)
     return target
 
 
-def command_swap(target, command_1, command_2, bracketnum=1):
+def commandSwap(target, command_1, command_2, bracketnum=1):
     target = target.replace(command_1, "🚀").replace(command_2, "🚁")
-    target = find_and_replace(target, bracketnum, lambda x: x)
+    target = findAndReplace(target, bracketnum, lambda x: x)
     return target.replace("🚀", command_1).replace("🚁", command_2)
 
 
-def create_table(snip, match):
+def createTable(snip, match):
     s = snip.buffer[snip.line]
     rows, cols = int(match.group(2)), int(match.group(3))
     offset = cols + 1
@@ -91,7 +90,7 @@ def create_table(snip, match):
     snip.expand_anon(final_str)
 
 
-def add_row(snip, match):
+def addRow(snip, match):
     s = snip.buffer[snip.line]
 
     rowLen = int(match.group(1))
@@ -104,65 +103,6 @@ def add_row(snip, match):
     snip.expand_anon(finalStr)
 
 
-def create_matrix(snip, match):
-    cols, rows = int(match.group(3)), int(match.group(4))
-    specialEnv = match.group(2)
-    augmented = match.group(1)
-
-    env = "matrix"
-    offset = cols + 1
-
-    if specialEnv:
-        env = str(specialEnv) + env
-
-    offset = cols + 1
-    snip.buffer[snip.line] = ""
-
-    openBrace, closeBrace = "", ""
-    if specialEnv == "b" and augmented:
-        openBrace, closeBrace = "\\left[", "\\right]"
-    elif specialEnv == "B" and augmented:
-        openBrace, closeBrace = "\\left\\{", "\\right\\}"
-    elif specialEnv == "p" and augmented:
-        openBrace, closeBrace = "\\left(", "\\right)"
-    elif specialEnv == "v" and augmented:
-        openBrace, closeBrace = "\\left|", "\\right|"
-    elif specialEnv == "V" and augmented:
-        openBrace, closeBrace = "\\left\\|", "\\right\\|"
-    elif specialEnv == "d":
-        openBrace, closeBrace = "\\left$1", "\\right$0"
-
-    colLetter = "c" * (cols - 1)
-    finalStr = openBrace
-
-    if augmented:
-        finalStr += "\\begin{array}{" + colLetter + "|c}\n"
-    elif specialEnv == "d":
-        finalStr += "\\begin{matrix}\n"
-    else:
-        finalStr += "\\begin{" + env + "}\n"
-
-    for i in range(rows):
-        finalStr += "\t"
-        rowValues = []
-        for j in range(cols):
-            rowValues.append("$" + str(i * cols + j + offset))
-
-        finalStr += " & ".join(rowValues)
-        finalStr += " \\\\\\\n"
-
-    if augmented:
-        finalStr += "\\end{array}"
-    elif specialEnv == "d":
-        finalStr += "\\end{matrix}"
-    else:
-        finalStr += "\\end{" + env + "}"
-
-    finalStr += closeBrace
-
-    snip.expand_anon(finalStr)
-
-
 def complete(t, opts):
     if t:
         opts = [m[len(t):] for m in opts if m.startswith(t)]
@@ -172,66 +112,22 @@ def complete(t, opts):
     return "(" + "|".join(opts) + ")"
 
 
-def have_block(form, snip):
-    status = 0
-    for line in snip.buffer[: snip.line + 1]:
-        if line == form:
-            status = not status
-    return not status
-
-
-def get_block(form, snip):
-    status = 0
-    start = 0
-
-    for index, line in enumerate(snip.buffer[: snip.line + 1]):
-        if line == form:
-            status = not status
-            if status:
-                start = index
-
-    result = "\n".join(snip.buffer[start + 1: snip.line])
-    snip.buffer[start: snip.line + 1] = [""]
-    return result
-
-
-def calculate_sympy(snip):
-    block = get_block("SYMPY", snip)
-    pre_define = """
-from sympy import *
-x, y, z, t = symbols('x y z t')
-k, m, n = symbols('k m n', integer = True)
-f, g, h = symbols('f g h', cls = Function)
-"""
-    sympy_result = {}
-    exec(
-        pre_define
-        + block.replace("\\", "")
-        .replace("^", "**")
-        .replace("{", "(")
-        .replace("}", ")"),
-        sympy_result,
-    )
-    result = latex(sympy_result["rv"] or "")
-    snip.expand_anon(result)
-
-
-def bar_hat_vec(target, word, subscript=""):
+def barHatVec(target, word, subscript=""):
     return (
         "\\"
         + target
         + "{"
-        + ("\\" + word + "math" if word in special_bar_hat_vec else word)
+        + ("\\" + word + "math" if word in specialBarHatVec else word)
         + "}"
         + (subscript or "")
     )
 
 
-def long_bar_hat_vec(target, word, subscript=""):
-    return map_bar_hat_vec[target] + "{" + word + "}" + (subscript or "")
+def longBarHatVec(target, word, subscript=""):
+    return mapBarHatVec[target] + "{" + word + "}" + (subscript or "")
 
 
-def expand_unit(string):
+def expandUnit(string):
     new_string = []
 
     string_split = string.replace("  ", r" per ").split()
