@@ -1,8 +1,5 @@
-from sympy import latex
-from subprocess import check_output, TimeoutExpired
-from re import sub
-
 from latex_.scopes import display_math
+from sympy import latex
 
 wolframscript_timeout_default = 10
 
@@ -21,7 +18,8 @@ def pre_process_text(text):
 
 def pre_process_latex(text):
     return (
-        text.replace(r"\e", r" e")
+        text
+        # .replace(r"\e", r" e")
         .replace(r"\d ", r"\,d")
         .replace(
             "\\textrm{d}",
@@ -31,7 +29,7 @@ def pre_process_latex(text):
 
 
 def process_latex(text):
-    return sub(r"(\s|\W?)e(?=\W)", r"\g<1>\\e", text).replace(
+    return text.replace(
         r"\, d",
         r"\textrm{d}",
     )
@@ -57,63 +55,23 @@ def calculate_sympy(snip):
     index, block = get_block("Sympy", snip)
     snip.buffer[index: snip.line + 1] = [""]
 
-    pre_define = """
+    code = pre_process_text(block)
+
+    tex = f"""
 from sympy import *
+from latex2sympy2 import *
 x, y, z, t = symbols('x y z t')
 k, m, n = symbols('k m n', integer = True)
 f, g, h = symbols('f g h', cls = Function)
-"""
+{code}"""
 
-    sympy_result = {}
-    exec(pre_define + pre_process_text(block), sympy_result)
-
-    result = process_latex(latex(sympy_result["rv"] or ""))
-    snip.cursor.set(index, len(result))
-    snip.buffer[index] = result
-
-
-def calculate_wolfram_string(
-    string,
-    from_latex=False,
-    timeout=wolframscript_timeout_default,
-):
     result = ""
 
-    if from_latex:
-        code = (
-            'ToString[ToExpression["'
-            + pre_process_latex(string).replace(
-                "\\",
-                "\\\\",
-            )
-            + '", TeXForm], TeXForm]'
-        )
-    else:
-        code = "ToString[" + string + ", TeXForm]"
-
-    try:
-        result = check_output(
-            ["wolframscript", "-code", code],
-            encoding="utf-8",
-            timeout=int(timeout),
-        ).strip()
-    except TimeoutExpired:
-        result = ""
-
-    return result
-
-
-def calculate_wolfram(
-    snip,
-    from_latex=False,
-    timeout=wolframscript_timeout_default,
-):
-    index, block = get_block("\\wolfram" if from_latex else "wolfram", snip)
-    snip.buffer[index: snip.line + 1] = [""]
-
-    result = process_latex(
-        calculate_wolfram_string(block, from_latex, timeout),
-    )
+    sympy_result = {}
+    exec(tex, sympy_result)
+    rv = sympy_result["rv"] or block
+    lrv = latex(rv)
+    result = process_latex(lrv)
 
     snip.cursor.set(index, len(result))
     snip.buffer[index] = result
