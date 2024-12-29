@@ -1,3 +1,4 @@
+from builtin import writeRoman
 from .variables import specialBarHatVec, mapBarHatVec, units
 
 commandMapping = [
@@ -90,6 +91,35 @@ def createTable(snip, match):
     snip.expand_anon(final_str)
 
 
+def createProblemSolution(snip, match):
+    snip.buffer[snip.line] = ""
+
+    finalStr = "\\begin{problem}\n"
+    finalStr += "\t\\begin{enumerate}\n"
+
+    for i in range(int(match.group(1))):
+        finalStr += "\t\t\\item $" + str(i + 1) + "\n"
+
+        if i < int(match.group(1)) - 1:
+            finalStr += "\n"
+
+    finalStr += "\t\\end{enumerate}\n"
+    finalStr += "\\end{problem}\n"
+
+    finalStr += "\n"
+
+    for i in range(int(match.group(1))):
+        numeral = writeRoman(i + 1)
+
+        finalStr += f"\\begin{{proof}}[Solution to ({numeral})]\n"
+        finalStr += "\t$" + str(i + 1 + int(match.group(1))) + "\n"
+        finalStr += "\\end{proof}\n"
+
+        if i < int(match.group(1)) - 1:
+            finalStr += "\n"
+
+    snip.expand_anon(finalStr)
+
 def addRow(snip, match):
     s = snip.buffer[snip.line]
 
@@ -100,6 +130,7 @@ def addRow(snip, match):
     finalStr = oldSpacing
     finalStr += " & ".join(["$" + str(j + 1) for j in range(rowLen)])
     finalStr += " \\\\\\"
+
     snip.expand_anon(finalStr)
 
 
