@@ -25,6 +25,7 @@ ors = ["lor", "bigvee"]
 ###############
 
 plusMinus = ["\\pm", "\\mp"]
+times = ["\\times", "\\cdot"]
 
 #################
 #  Parenthesis  #
